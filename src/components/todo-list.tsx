@@ -127,8 +127,6 @@ export function TodoList() {
 
             <div className="flex flex-col items-center justify-center gap-5">
                 <div className="flex items-center gap-2">
-                    {/* <Input className="text-zinc-400 w-[430px] h-12 rounded-xl col-span-3" placeholder="Buscar tarefa..." value={search} onChange={(e) => setSearch(e.target.value)} required /> */}
-
                     <SearchIcon size={20} />
 
                     <Input className="text-zinc-400 w-[430px] h-8 rounded-2xl col-span-3" placeholder="Buscar tarefa..." value={search} onChange={(e) => setSearch(e.target.value)} required />
