@@ -4,7 +4,7 @@ import z from "zod";
 import { CardUser } from "./card-user";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { PlusCircle, Trash } from "lucide-react";
+import { PlusCircle, Trash, SearchIcon } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -28,6 +28,8 @@ const Task = z.object({
 
 export function TodoList() {
     const [task, setTask] = useState<Task[]>([]);
+    const [search, setSearch] = useState('');
+    const [isOpen, setIsOpen] = useState(false);
 
     async function handleCreateNewTask(event: any) {
         event.preventDefault()
@@ -87,12 +89,12 @@ export function TodoList() {
         })
 
         const updatedTasks = task.filter(task => task.id !== id);
-        
+
         toast.success('Tarefa excluída com sucesso', {
             position: 'top-right',
             duration: 2000
         })
-        
+
         setTask(updatedTasks);
         return;
     }
@@ -124,6 +126,16 @@ export function TodoList() {
             <CardUser createdTasksCount={countCreatedTaskCount} completedTasksCount={countCompletedTaskCount} />
 
             <div className="flex flex-col items-center justify-center gap-5">
+                <div className="flex items-center gap-2">
+                    {/* <Input className="text-zinc-400 w-[430px] h-12 rounded-xl col-span-3" placeholder="Buscar tarefa..." value={search} onChange={(e) => setSearch(e.target.value)} required /> */}
+
+                    <SearchIcon size={20} />
+
+                    <Input className="text-zinc-400 w-[430px] h-8 rounded-2xl col-span-3" placeholder="Buscar tarefa..." value={search} onChange={(e) => setSearch(e.target.value)} required />
+                </div>
+
+                <Separator orientation="horizontal" className="w-[490px]" />
+
                 <form onSubmit={handleCreateNewTask} className="flex items-center justify-center gap-1">
                     <Input className="text-zinc-400 w-[395px] h-12 rounded-xl col-span-3" placeholder="Crie uma tarefa..." required />
 
@@ -133,11 +145,9 @@ export function TodoList() {
                     </Button>
                 </form>
 
-                <Separator orientation="horizontal" className="w-[490px]" />
-
                 <div className={`bg-zinc-900 ${task.filter(task => task.completed === false && !task.deletedAt).length > 0 ? 'h-auto' : 'h-[400px]'} w-[490px] rounded-xl transition-all duration-300`}>
                     {task.filter(task => task.completed === false && !task.deletedAt).length > 0 ? (
-                        task.filter(task => task.completed === false && !task.deletedAt).slice(0, 10).map(task => (
+                        task.filter(task => task.completed === false && !task.deletedAt && task.title.toLowerCase().includes(search.toLowerCase())).slice(0, 10).map(task => (
                             <ul key={task.id} className="p-2">
                                 <li className="mb-3 bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 transition-all duration-300">
                                     <div className="flex items-center justify-between w-[460px]">
