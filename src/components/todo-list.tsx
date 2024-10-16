@@ -29,7 +29,6 @@ const Task = z.object({
 export function TodoList() {
     const [task, setTask] = useState<Task[]>([]);
     const [search, setSearch] = useState('');
-    const [isOpen, setIsOpen] = useState(false);
 
     async function handleCreateNewTask(event: any) {
         event.preventDefault()
