@@ -125,7 +125,7 @@ export function TodoList() {
             <CardUser createdTasksCount={countCreatedTaskCount} completedTasksCount={countCompletedTaskCount} />
 
             <div className="flex flex-col items-center justify-center gap-5">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-8">
                     <SearchIcon size={20} />
 
                     <Input className="text-zinc-400 w-[430px] h-8 rounded-2xl col-span-3" placeholder="Buscar tarefa..." value={search} onChange={(e) => setSearch(e.target.value)} required />
@@ -171,7 +171,7 @@ export function TodoList() {
                         ))
                     ) : (
                         <div className="flex justify-center items-center h-full">
-                            <p className="text-zinc-400">Crie uma tarefa!</p>
+                            <p className="text-zinc-400">Comece criando uma tarefa!</p>
                         </div>
                     )}
                 </div>
