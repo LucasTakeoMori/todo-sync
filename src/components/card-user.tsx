@@ -1,9 +1,9 @@
+import {  Briefcase, User } from "lucide-react";
 import { Avatar, AvatarImage } from "./ui/avatar";
 
 interface CardUserProps {
     createdTasksCount: number
     completedTasksCount: number
-    // excludedTasksCount: number
 }
 
 export function CardUser({ createdTasksCount, completedTasksCount }: CardUserProps) {
@@ -16,13 +16,20 @@ export function CardUser({ createdTasksCount, completedTasksCount }: CardUserPro
                     </Avatar>
 
                     <div className="flex flex-col">
-                        <span className="text-sm text-zinc-500 font-bold">
-                            @lucas.mori
-                        </span>
+                        <div className="flex items-center gap-1">
+                            <User className="w-4 h-4 text-sm text-zinc-500 font-bold" />
+                            <span className="text-sm text-zinc-500 font-bold">
+                                lucas.mori
+                            </span>
+                        </div>
 
-                        <span className="text-sm text-zinc-500">
-                            Developer
-                        </span>
+                        <div className="flex items-center gap-1">
+                            <Briefcase className="w-4 h-4 text-sm text-zinc-500 font-bold" />
+
+                            <span className="text-sm text-zinc-500">
+                                Developer
+                            </span>
+                        </div>
                     </div>
                 </div>
 
