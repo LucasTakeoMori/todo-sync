@@ -1,13 +1,18 @@
-import { useState } from "react";
-import { toast } from "sonner";
-import z from "zod";
-import { CardUser } from "./card-user";
+import { v4 as uuidv4 } from 'uuid';
+import { useState, type FormEvent } from "react";
+
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { PlusCircle, Trash, SearchIcon } from "lucide-react";
 import { Separator } from "./ui/separator";
-import { v4 as uuidv4 } from 'uuid';
+import { CardUser } from "./card-user";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
+import { toast } from "sonner";
+import { PlusCircle, Trash, SearchIcon, Timer, CalendarDays, Check } from "lucide-react";
+import { format, formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import z from "zod";
 interface Task {
     id: string;
     title: string;
@@ -27,75 +32,60 @@ const Task = z.object({
 })
 
 export function TodoList() {
-    const [task, setTask] = useState<Task[]>([]);
+    const [task, setTask] = useState<Task[]>(() => {
+        const storedTasks = localStorage.getItem('tasks');
+        return storedTasks ? JSON.parse(storedTasks) : [];
+    });
+
     const [search, setSearch] = useState('');
 
-    async function handleCreateNewTask(event: any) {
-        event.preventDefault()
+    async function handleCreateNewTask(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
 
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-        const inputValue = event.target.querySelector('input').value;
-        const existingTask = task.find(task => task.title === inputValue && task.completed === false);
+        const inputValue = (event.target as HTMLFormElement).querySelector('input')?.value;
+        const existingTask = task.find(task => task.title === inputValue && !task.completed);
 
         if (!inputValue) return;
 
         if (existingTask) {
-            toast.error('Já existe uma tarefa com esse descrição', {
+            toast.error('Já existe uma tarefa com essa descrição', {
                 position: 'top-right',
                 duration: 2000
-            })
-
+            });
             return;
         }
 
         try {
-            const newTask = {
+            const newTask: Task = {
                 id: uuidv4(),
                 title: inputValue,
                 createdAt: new Date(),
                 completed: false,
-            }
+            };
 
-            const updatedTasks = [...task, newTask]
-            setTask(updatedTasks)
+            const updatedTasks = [...task, newTask];
+            setTask(updatedTasks);
+
+            localStorage.setItem('tasks', JSON.stringify(updatedTasks));
 
             toast.success('Tarefa criada com sucesso', {
                 position: 'top-right',
                 duration: 2000
-            })
+            });
 
-            event.target.reset()
+            (event.target as HTMLFormElement).reset();
         } catch (error) {
-            const errorMsg = error as Error
+            const errorMsg = error as Error;
 
-            toast.error(`Erro ao tentar criar a sua tarefa! | ${errorMsg}`, {
+            toast.error(`Erro ao tentar criar a sua tarefa! | ${errorMsg.message}`, {
                 position: 'top-right',
                 duration: 2000
-            })
+            });
 
-            console.log(error)
+            console.error(error);
         }
-    }
-
-    async function handleRemoveTask(id: string) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        task.forEach((task) => {
-            if (task.id === id) {
-                task.deletedAt = new Date();
-            }
-        })
-
-        const updatedTasks = task.filter(task => task.id !== id);
-
-        toast.success('Tarefa excluída com sucesso', {
-            position: 'top-right',
-            duration: 2000
-        })
-
-        setTask(updatedTasks);
-        return;
     }
 
     async function handleConcludedTask(id: string) {
@@ -108,6 +98,8 @@ export function TodoList() {
             }
         })
 
+        localStorage.setItem('tasks', JSON.stringify(task));
+
         toast.success('Tarefa concluída com sucesso', {
             position: 'top-right',
             duration: 2000
@@ -117,65 +109,164 @@ export function TodoList() {
         return;
     }
 
-    const countCreatedTaskCount = task.length
-    const countCompletedTaskCount = task.filter(task => task.completed === true).length;
+    async function handleRemoveTask(id: string) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        task.forEach((task) => {
+            if (task.id === id) {
+                task.deletedAt = new Date();
+            }
+        })
+
+        localStorage.setItem('tasks', JSON.stringify(task));
+
+        toast.success('Tarefa excluída com sucesso', {
+            position: 'top-right',
+            duration: 2000
+        })
+
+        setTask(task);
+        return;
+    }
+
+    const countCreatedTaskCount = task.length;
+
+    const completedTaskCount = task.filter(task => task.completed === true).length;
+    const canceledTaskCount = task.filter(task => task.deletedAt).length;
+
+    const filteredTasks = task.filter((task) => task.title.toLowerCase().includes(search.toLowerCase()) && task.completed === false && !task.deletedAt).reverse();
 
     return (
-        <>
-            <CardUser createdTasksCount={countCreatedTaskCount} completedTasksCount={countCompletedTaskCount} />
+        <div className='flex flex-col items-center gap-4 justify-center mx-auto'>
+            <CardUser createdTasksCount={countCreatedTaskCount} completedTasksCount={completedTaskCount} />
 
-            <div className="flex flex-col items-center justify-center gap-5">
-                <div className="flex items-center gap-8">
-                    <SearchIcon size={20} />
+            <Separator orientation="horizontal" className="w-[490px]" />
 
-                    <Input className="text-zinc-400 w-[430px] h-8 rounded-2xl col-span-3" placeholder="Buscar tarefa..." value={search} onChange={(e) => setSearch(e.target.value)} required />
-                </div>
+            <div className="flex items-center gap-4">
+                <SearchIcon size={20} />
 
-                <Separator orientation="horizontal" className="w-[490px]" />
+                <Input className="text-zinc-400 w-[430px] h-8 rounded-2xl col-span-3" placeholder="Buscar tarefa" value={search} onChange={(e) => setSearch(e.target.value)} required />
+            </div>
 
-                <form onSubmit={handleCreateNewTask} className="flex items-center justify-center gap-1">
-                    <Input className="text-zinc-400 w-[395px] h-12 rounded-xl col-span-3" placeholder="Crie uma tarefa..." required />
 
-                    <Button className="flex items-center gap-2 text-sm h-12 rounded-xl hover:opacity-90 transition-all duration-300">
-                        Criar
-                        <PlusCircle size={20} />
-                    </Button>
-                </form>
+            <form onSubmit={handleCreateNewTask} className="flex items-center justify-center gap-1">
+                <Input className="text-zinc-400 w-[395px] h-12 rounded-xl col-span-3" placeholder="Crie uma tarefa" required />
 
-                <div className={`bg-zinc-900 ${task.filter(task => task.completed === false && !task.deletedAt).length > 0 ? 'h-auto' : 'h-[400px]'} w-[490px] rounded-xl transition-all duration-300`}>
-                    {task.filter(task => task.completed === false && !task.deletedAt).length > 0 ? (
-                        task.filter(task => task.completed === false && !task.deletedAt && task.title.toLowerCase().includes(search.toLowerCase())).slice(0, 10).map(task => (
-                            <ul key={task.id} className="p-2">
-                                <li className="mb-3 bg-zinc-800 p-2 rounded-xl hover:bg-zinc-700 transition-all duration-300">
-                                    <div className="flex items-center justify-between w-[460px]">
-                                        <div className="flex gap-4">
-                                            <Input type="checkbox" onClick={() => handleConcludedTask(task.id)} className="w-3 h-3" />
-                                            <div className="flex flex-col">
-                                                <span className="text-base text-zinc-400">{task.title}</span>
-                                                <span className="text-xs text-zinc-500">
-                                                    {task.createdAt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-4">
-                                            <Button
-                                                className="flex items-center gap-2 text-sm h-12 rounded-xl hover:opacity-90 transition-all duration-300"
-                                                onClick={() => handleRemoveTask(task.id)}
-                                            >
-                                                <Trash size={20} />
-                                            </Button>
+                <Button className="flex items-center gap-2 text-sm h-12 rounded-xl hover:opacity-90 transition-all duration-300">
+                    Criar
+                    <PlusCircle size={20} />
+                </Button>
+            </form>
+
+            <div className='flex flex-col gap-4 items-center bg-zinc-900 rounded-xl w-[500px] h-[500px] py-4 px-4'>
+                {filteredTasks.length > 0 ? (
+                    filteredTasks.map((item) => (
+                        <div key={item.id} className='w-full flex items-start bg-zinc-800 border-l-rose-500 border-l-4 rounded-[10px] p-2'>
+                            <div className='flex flex-col items-start justify-center flex-1'>
+                                <div className='flex items-center gap-4'>
+                                    <Avatar className='w-6 h-6 rounded-full'>
+                                        <AvatarImage src="./public/avatar.jpeg" className="object-cover object-center rounded-full" />
+                                        <AvatarFallback>User</AvatarFallback>
+                                    </Avatar>
+
+                                    <p className='flex items-center gap-2 text-xs text-muted-foreground'>
+                                        {format(new Date(item.createdAt), 'dd/MM/yyyy')}
+                                        <CalendarDays className='w-4 h-4 text-white' />
+                                    </p>
+                                </div>
+
+                                <p className='flex items-center gap-2 text-sm text-muted-foreground mt-4'>
+                                    {item.title}
+                                </p>
+                            </div>
+
+                            <div className='flex flex-col items-end gap-4 ml-auto'>
+                                <Button className='flex items-center gap-2 text-sm h-6 rounded-full hover:opacity-90 transition-all duration-300' onClick={() => handleConcludedTask(item.id)}>
+                                    <Check className='w-4 h-4' />
+                                </Button>
+
+                                <Button className='flex items-center gap-2 text-sm h-6 rounded-full hover:opacity-90 transition-all duration-300' onClick={() => handleRemoveTask(item.id)}>
+                                    <Trash className='w-4 h-4' />
+                                </Button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className='flex flex-col items-center justify-center flex-1'>
+                        <p className='text-sm text-muted-foreground'>
+                            Quais as suas próximas tarefas?
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            <div className='w-[500px]'>
+                <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="item-1">
+                        <AccordionTrigger>
+                            <div className='flex items-center gap-1'>
+                                Tarefas Finalizadas <span className='ml-2 text-muted-foreground'>{completedTaskCount}</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            {task.filter((task) => task.completed === true).map((task) => {
+                                return (
+                                    <div className='flex flex-col items-start gap-2 p-2'>
+                                        <div className='bg-zinc-800 rounded-xl p-4 w-full shadow-md'>
+                                            <p className='text-sm text-gray-400'>
+                                                <span className='font-semibold text-white'>ID:</span> <span className='ml-2'>{task.id}</span>
+                                            </p>
+                                            <p className='text-sm text-gray-400 mt-2'>
+                                                <span className='font-semibold text-white'>Título da tarefa:</span> <span className='ml-2'>{task.title}</span>
+                                            </p>
+
+                                            <p className='flex items-center gap-2 text-sm text-gray-400 mt-2'>
+                                                <Timer className='w-4 h-4 text-white' />
+                                                {formatDistanceToNow(new Date(task.createdAt), {
+                                                    locale: ptBR,
+                                                    addSuffix: true
+                                                })}
+                                            </p>
                                         </div>
                                     </div>
-                                </li>
-                            </ul>
-                        ))
-                    ) : (
-                        <div className="flex justify-center items-center h-full">
-                            <p className="text-zinc-400">Comece criando uma tarefa!</p>
-                        </div>
-                    )}
-                </div>
+                                )
+                            })}
+                        </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="item-2">
+                        <AccordionTrigger>
+                            <div className='flex items-center gap-1'>
+                                Tarefas Excluídas <span className='ml-2 text-muted-foreground'>{canceledTaskCount}</span>
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            {task.filter((task) => task.deletedAt !== null).map((task) => {
+                                return (
+                                    <div className='flex flex-col items-start gap-2 p-2'>
+                                        <div className='bg-zinc-800 rounded-xl p-4 w-full shadow-md'>
+                                            <p className='text-sm text-gray-400'>
+                                                <span className='font-semibold text-white'>ID:</span> <span className='ml-2'>{task.id}</span>
+                                            </p>
+                                            <p className='text-sm text-gray-400 mt-2'>
+                                                <span className='font-semibold text-white'>Título da tarefa:</span> <span className='ml-2'>{task.title}</span>
+                                            </p>
+
+                                            <p className='flex items-center gap-2 text-sm text-gray-400 mt-2'>
+                                                <Timer className='w-4 h-4 text-white' />
+                                                {formatDistanceToNow(new Date(task.createdAt), {
+                                                    locale: ptBR,
+                                                    addSuffix: true
+                                                })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </AccordionContent>
+                    </AccordionItem>
+                </Accordion>
             </div>
-        </>
+        </div>
     )
 }
