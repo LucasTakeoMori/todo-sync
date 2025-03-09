@@ -129,7 +129,7 @@ export function TodoList() {
         return;
     }
 
-    const countCreatedTaskCount = task.length;
+    const createdTaskCount = task.length;
 
     const completedTaskCount = task.filter(task => task.completed === true).length;
     const canceledTaskCount = task.filter(task => task.deletedAt).length;
@@ -138,7 +138,7 @@ export function TodoList() {
 
     return (
         <div className='flex flex-col items-center gap-4 justify-center mx-auto'>
-            <CardUser createdTasksCount={countCreatedTaskCount} completedTasksCount={completedTaskCount} />
+            <CardUser createdTasksCount={createdTaskCount} completedTasksCount={completedTaskCount} />
 
             <Separator orientation="horizontal" className="w-[490px]" />
 
